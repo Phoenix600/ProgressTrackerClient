@@ -196,6 +196,15 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
 
       // Recalculate topic schedule with new dates
       const newTopicSchedule = calculateTopicSchedule(course, batch.startDate, batch.plannedEndDate);
+      
+      // Preserve existing overdue reasons
+      newTopicSchedule.forEach(newItem => {
+        const existingItem = batch.topicSchedule.find(ts => ts.topicId.toString() === newItem.topicId.toString());
+        if (existingItem && (existingItem as any).overdueReason) {
+          (newItem as any).overdueReason = (existingItem as any).overdueReason;
+        }
+      });
+      
       batch.topicSchedule = newTopicSchedule;
 
       // Update progress deviations based on new schedule
@@ -265,5 +274,26 @@ router.get('/:id/deviations', async (req: Request, res: Response, next: NextFunc
     next(err);
   }
 });
+ 
+// PATCH /api/batches/:batchId/topics/:topicId/overdue-reason
+router.patch('/:batchId/topics/:topicId/overdue-reason', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { overdueReason } = req.body;
+    const { batchId, topicId } = req.params;
 
+    const batch = await Batch.findById(batchId);
+    if (!batch) return res.status(404).json({ message: 'Batch not found' });
+
+    const scheduleItem = batch.topicSchedule.find(ts => ts.topicId.toString() === topicId);
+    if (!scheduleItem) return res.status(404).json({ message: 'Topic not found in schedule' });
+
+    scheduleItem.overdueReason = overdueReason;
+    await batch.save();
+
+    res.json({ message: 'Overdue reason updated', data: batch });
+  } catch (err) {
+    next(err);
+  }
+});
+ 
 export default router;

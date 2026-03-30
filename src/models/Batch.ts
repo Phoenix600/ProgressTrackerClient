@@ -6,7 +6,7 @@ export interface IBatch extends Document {
   startDate: Date;
   plannedEndDate: Date;
   progress: { topicId: mongoose.Types.ObjectId; completedAt: Date }[];
-  topicSchedule: { topicId: mongoose.Types.ObjectId; expectedDate: Date }[];
+  topicSchedule: { topicId: mongoose.Types.ObjectId; expectedDate: Date; overdueReason?: string }[];
 }
 
 const batchSchema = new Schema<IBatch>({
@@ -20,7 +20,8 @@ const batchSchema = new Schema<IBatch>({
   }],
   topicSchedule: [{
     topicId: { type: Schema.Types.ObjectId, required: true },
-    expectedDate: { type: Date, required: true }
+    expectedDate: { type: Date, required: true },
+    overdueReason: { type: String }
   }]
 }, { 
   timestamps: true,
